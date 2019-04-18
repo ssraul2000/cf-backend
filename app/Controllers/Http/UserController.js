@@ -2,33 +2,58 @@
 const User = use("App/Models/User.js");
 class UserController {
   async store({ response, request }) {
-    const data = request.only(["name", "username", "password", "email"]);
-    if (!data) {
-      return response.status(404);
+    try {
+      const data = request.only(["name", "username", "password", "email"]);
+      const user = await User.create(data);
+      return user;
+    } catch (err) {
+      return response.status(404).send({ error: "Failed to creare user!" });
     }
-    const user = await User.create(data);
-    return user;
   }
   async show({ response, params }) {
-    const user = await User.findOrFail(params.id);
-    return user;
+    try {
+      const user = await User.findOrFail(params.id);
+      return user;
+    } catch (err) {
+      return response.status(404).send({ error: "User not found!" });
+    }
   }
   async update({ request, response, auth, params }) {
-    const user = await User.findOrFail(params.id);
-    if (user.id !== auth.id) {
-      return response.status(401);
+    try {
+      const user = await User.findOrFail(params.id);
+      console.log(auth.user);
+      if (user.id !== auth.user.id) {
+        return response.status(401).send({ error: "You not permission!" });
+      }
+      const data = request.only(["name", "username", "password", "email"]);
+      user.merge(data);
+      await user.save();
+      return user;
+    } catch (err) {
+      return response.status(404).send({ error: "Failed to update user!" });
     }
-    const data = request.all();
-    user.merge(data);
-    await user.saveOrFail();
-    return user;
   }
   async destroy({ params }) {
-    const user = await User.findOrFail(params.id);
-    if (params.id !== auth.id) {
-      return response.status(401);
+    try {
+      const user = await User.findOrFail(params.id);
+      if (params.id !== auth.user.id) {
+        return response.status(401);
+      }
+      await user.delete();
+    } catch (err) {
+      return response.status(404).send({ error: "Failed to delete user" });
     }
-    await user.delete();
+  }
+  async showUserForCashier({ response, params }) {
+    try {
+      const user = await User.query()
+        .with("cashiers")
+        .where({ id: params.id })
+        .fetch();
+      return user;
+    } catch (err) {
+      return response.status(404).send({ error: "User not found!" });
+    }
   }
 }
 
