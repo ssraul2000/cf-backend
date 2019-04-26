@@ -1,10 +1,11 @@
 "use strict";
-
 const Cashier = use("App/Models/Cashier");
 class CashierController {
-  async index({ request, response, view }) {
+  async index({ auth, response }) {
     try {
-      const cashiers = await Cashier.all();
+      const cashiers = await Cashier.query()
+        .where("user_id", auth.user.id)
+        .fetch();
       return cashiers;
     } catch (err) {
       return response.status(404).send({ error: "Failed to find cashiers!" });
@@ -51,6 +52,20 @@ class CashierController {
       await cashier.delete();
     } catch (err) {
       return response.status(404).send({ error: "Failed to delete cashier!" });
+    }
+  }
+
+  async cashierToDay({ response, auth }) {
+    try {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${now.getDay()}-${now.getDate()} 00:00:00`;
+      const cashiers = await Cashier.query()
+        .where("created_at", ">", date)
+        .where("user_id", auth.user.id)
+        .fetch();
+      return cashiers;
+    } catch (err) {
+      return response.status(404).send({ error: "Failed to find cashier!" });
     }
   }
 }

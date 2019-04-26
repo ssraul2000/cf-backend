@@ -9,6 +9,8 @@ Route.group(() => {
   Route.put("/user/:id", "UserController.update");
   Route.delete("/user/:id", "UserController.delete");
   Route.get("/user/:id/cashier", "UserController.showUserForCashier");
+
   //Cashier
   Route.resource("/cashier", "CashierController").apiOnly();
+  Route.get("/cashiers/day", "CashierController.cashierToDay");
 }).middleware(["auth"]);
